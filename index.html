@@ -13,12 +13,13 @@
 
 
       class Minion {
-        constructor(health, divineShield) {
+        constructor(health, divineShield, spellDamage) {
           this.health = health;
           this.divineShield = divineShield;
+          this.spellDamage = spellDamage;
         }
-        printableString() {
-          return `health: ${this.health}, divineShield: ${this.divineShield}`;
+        toPrintableString() {
+          return `health: ${this.health}, divineShield: ${this.divineShield}, spellDamage: ${this.spellDamage}`;
         }
         hasDivineShield() {
           return this.divineShield;
@@ -29,12 +30,14 @@
         constructor(name) {
           this.name = name;
           this.minions = [];
+          this.spellDamage = 0;
         }
         generateTestingMinions(minionNum) {
           for(let i = 0; i < minionNum; i++) {
-            let randomHealth = Math.floor(Math.random() * 2 + 1),
-                randomDivineShield = Math.floor(Math.random() * 2);
-            this.minions.push(new Minion(randomHealth, randomDivineShield));
+            let randomHealth = Math.floor(Math.random() * 10 + 1),
+                randomDivineShield = Math.floor(Math.random() * 2),
+                randomSpellDamage = Math.floor(Math.random() * 2);
+            this.minions.push(new Minion(randomHealth, randomDivineShield, randomSpellDamage));
           }
         }
         printMinions() {
@@ -43,8 +46,13 @@
             console.log('<empty>');
           } else {
             for(let i = 0; i < this.minions.length; i++)
-              console.log(`(${i}) ${this.minions[i].printableString()}`);
+              console.log(`(${i}) ${this.minions[i].toPrintableString()}`);
           }
+        }
+        updateSpellDamage() {
+          this.spellDamage = 0;
+          for(let i = 0; i < this.minions.length; i++)
+            this.spellDamage += this.minions[i].spellDamage;
         }
         dealDamagesToMinions(damage) {
           for(let i = 0; i < this.minions.length; i++) {
@@ -94,13 +102,14 @@
         let numOfMinionsDied = 0;
 
         timesOfCasting++;
-        console.log(`\nCast defile (${timesOfCasting} times)`);
+        playerBattlefield.updateSpellDamage();
+        console.log(`\nCast defile (${timesOfCasting} times), spellDamage: ${playerBattlefield.spellDamage}`);
 
-        playerBattlefield.dealDamagesToMinions(1);
+        playerBattlefield.dealDamagesToMinions(1 + playerBattlefield.spellDamage);
         numOfMinionsDied += playerBattlefield.updateMinionsState();
         playerBattlefield.printMinions();
 
-        opponentBattlefield.dealDamagesToMinions(1);
+        opponentBattlefield.dealDamagesToMinions(1 + opponentBattlefield.spellDamage);
         numOfMinionsDied += opponentBattlefield.updateMinionsState();
         opponentBattlefield.printMinions();
 
