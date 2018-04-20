@@ -13,10 +13,11 @@
 
 
       class Minion {
-        constructor(health, divineShield, spellDamage) {
+        constructor(health, divineShield, spellDamage, deathrattle) {
           this.health = health;
           this.divineShield = divineShield;
           this.spellDamage = spellDamage;
+          this.deathrattle = deathrattle
         }
         toPrintableString() {
           return `health: ${this.health}, divineShield: ${this.divineShield}, spellDamage: ${this.spellDamage}`;
@@ -30,14 +31,14 @@
         constructor(name) {
           this.name = name;
           this.minions = [];
-          this.spellDamage = 0;
+          this.boardSpellDamage = 0;
         }
         generateTestingMinions(minionNum) {
           for(let i = 0; i < minionNum; i++) {
             let randomHealth = Math.floor(Math.random() * 10 + 1),
                 randomDivineShield = Math.floor(Math.random() * 2),
                 randomSpellDamage = Math.floor(Math.random() * 2);
-            this.minions.push(new Minion(randomHealth, randomDivineShield, randomSpellDamage));
+            this.minions.push(new Minion(randomHealth, randomDivineShield, randomSpellDamage, 0));
           }
         }
         printMinions() {
@@ -49,10 +50,10 @@
               console.log(`(${i}) ${this.minions[i].toPrintableString()}`);
           }
         }
-        updateSpellDamage() {
-          this.spellDamage = 0;
+        updateBoardSpellDamage() {
+          this.boardSpellDamage = 0;
           for(let i = 0; i < this.minions.length; i++)
-            this.spellDamage += this.minions[i].spellDamage;
+            this.boardSpellDamage += this.minions[i].spellDamage;
         }
         dealDamagesToMinions(damage) {
           for(let i = 0; i < this.minions.length; i++) {
@@ -79,6 +80,23 @@
         }
       }
 
+      let Snapshot = new class {
+        constructor() {
+          this.data = [];
+        }
+        make(_turn, _playerMinions, _opponentMinions, _boardSpellDamage) {
+          this.data.push({
+            turn: _turn,
+            minions: {
+              // Making deep copy
+              player: JSON.parse(JSON.stringify(_playerMinions)),
+              opponent: JSON.parse(JSON.stringify(_opponentMinions))
+            },
+            boardSpellDamage: _boardSpellDamage
+          });
+        }
+      };
+
       /* ==================================================================== */
 
       let playerBattlefield = new Battlefield('Player'),
@@ -89,6 +107,13 @@
 
       opponentBattlefield.generateTestingMinions(minionNum.opponent);
       opponentBattlefield.printMinions();
+
+      playerBattlefield.updateBoardSpellDamage();
+      Snapshot.make(0,
+        playerBattlefield.minions,
+        opponentBattlefield.minions,
+        playerBattlefield.boardSpellDamage
+      );
 
       /* ==================================================================== */
 
@@ -102,18 +127,25 @@
         let numOfMinionsDied = 0;
 
         timesOfCasting++;
-        playerBattlefield.updateSpellDamage();
-        console.log(`\nCast defile (${timesOfCasting} times), spellDamage: ${playerBattlefield.spellDamage}`);
+        playerBattlefield.updateBoardSpellDamage();
+        console.log(`\nCast defile (${timesOfCasting} times), boardSpellDamage: ${playerBattlefield.boardSpellDamage}`);
 
-        playerBattlefield.dealDamagesToMinions(1 + playerBattlefield.spellDamage);
+        playerBattlefield.dealDamagesToMinions(1 + playerBattlefield.boardSpellDamage);
         numOfMinionsDied += playerBattlefield.updateMinionsState();
         playerBattlefield.printMinions();
 
-        opponentBattlefield.dealDamagesToMinions(1 + opponentBattlefield.spellDamage);
+        opponentBattlefield.dealDamagesToMinions(1 + opponentBattlefield.boardSpellDamage);
         numOfMinionsDied += opponentBattlefield.updateMinionsState();
         opponentBattlefield.printMinions();
 
         console.log(`num of minions died this turn: ${numOfMinionsDied}`)
+
+        Snapshot.make(timesOfCasting,
+          playerBattlefield.minions,
+          opponentBattlefield.minions,
+          playerBattlefield.boardSpellDamage
+        );
+
         return numOfMinionsDied;
       };
     </script>
