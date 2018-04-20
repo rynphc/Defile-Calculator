@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title></title>
+  </head>
+
+  <body>
+    <script>
+      const minionNum = {
+        player: 3,
+        opponent: 2
+      };
+
+
+      class Minion {
+        constructor(health, divineShield) {
+          this.health = health;
+          this.divineShield = divineShield;
+        }
+        printableString() {
+          return `health: ${this.health}, divineShield: ${this.divineShield}`;
+        }
+        hasDivineShield() {
+          return this.divineShield;
+        }
+      }
+
+      class Battlefield {
+        constructor(name) {
+          this.name = name;
+          this.minions = [];
+        }
+        generateTestingMinions(minionNum) {
+          for(let i = 0; i < minionNum; i++) {
+            let randomHealth = Math.floor(Math.random() * 2 + 1),
+                randomDivineShield = Math.floor(Math.random() * 2);
+            this.minions.push(new Minion(randomHealth, randomDivineShield));
+          }
+        }
+        printMinions() {
+          console.log(`${this.name}'s minions:`);
+          if(this.minions.length == 0) {
+            console.log('<empty>');
+          } else {
+            for(let i = 0; i < this.minions.length; i++)
+              console.log(`(${i}) ${this.minions[i].printableString()}`);
+          }
+        }
+        dealDamagesToMinions(damage) {
+          for(let i = 0; i < this.minions.length; i++) {
+            let minion = this.minions[i];
+            if(minion.hasDivineShield()) {
+              minion.divineShield = 0;
+            } else {
+              this.minions[i].health -= damage;
+            }
+          }
+        }
+        updateMinionsState() {
+          if(this.minions.length == 0) return 0;
+
+          let numOfMinionsDied = 0;
+          for(let i = 0; i < this.minions.length; i++) {
+            if(this.minions[i].health <= 0) {
+              numOfMinionsDied += 1;
+              this.minions.splice(i, 1);
+              i--;
+            }
+          }
+          return numOfMinionsDied;
+        }
+      }
+
+      /* ==================================================================== */
+
+      let playerBattlefield = new Battlefield('Player'),
+          opponentBattlefield = new Battlefield('Opponent');
+
+      playerBattlefield.generateTestingMinions(minionNum.player);
+      playerBattlefield.printMinions();
+
+      opponentBattlefield.generateTestingMinions(minionNum.opponent);
+      opponentBattlefield.printMinions();
+
+      /* ==================================================================== */
+
+      let keepCasting = false,
+          timesOfCasting = 0;
+      do {
+         keepCasting = castDefileOnce();
+      } while(keepCasting);
+
+      function castDefileOnce() {
+        let numOfMinionsDied = 0;
+
+        timesOfCasting++;
+        console.log(`\nCast defile (${timesOfCasting} times)`);
+
+        playerBattlefield.dealDamagesToMinions(1);
+        numOfMinionsDied += playerBattlefield.updateMinionsState();
+        playerBattlefield.printMinions();
+
+        opponentBattlefield.dealDamagesToMinions(1);
+        numOfMinionsDied += opponentBattlefield.updateMinionsState();
+        opponentBattlefield.printMinions();
+
+        console.log(`num of minions died this turn: ${numOfMinionsDied}`)
+        return numOfMinionsDied;
+      };
+    </script>
+  </body>
+</html>
