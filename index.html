@@ -1,153 +1,51 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title></title>
+    <title>Defile Calculator</title>
+    <meta charset="utf-8">
+    <style>
+      @font-face {
+        font-family: BelweBoldBT;
+        src: url('font/Belwe_Bold_BT.ttf');
+      }
+      @font-face {
+        font-family: FranklinGothicStdCondensed;
+        src: url('font/Franklin_Gothic_Std_Condensed.otf');
+      }
+      body {
+        /* I don't know why, but canvas needs this. */
+        font-family: BelweBoldBT;
+        margin: 0;
+      }
+      #preload {
+        display: none;
+      }
+      .canvas-wrapper {
+        font-size: 0;
+        text-align: center;
+      }
+      #slidebar-wrapper, #btn-wrapper {
+        text-align: center;
+        padding: 30px 0 0;
+      }
+    </style>
   </head>
 
   <body>
-    <script>
-      const minionNum = {
-        player: 3,
-        opponent: 2
-      };
+    <div id="preload">
+      <img src="img/template.png">​
+    </div>
 
-
-      class Minion {
-        constructor(health, divineShield, spellDamage, deathrattle) {
-          this.health = health;
-          this.divineShield = divineShield;
-          this.spellDamage = spellDamage;
-          this.deathrattle = deathrattle
-        }
-        toPrintableString() {
-          return `health: ${this.health}, divineShield: ${this.divineShield}, spellDamage: ${this.spellDamage}`;
-        }
-        hasDivineShield() {
-          return this.divineShield;
-        }
-      }
-
-      class Battlefield {
-        constructor(name) {
-          this.name = name;
-          this.minions = [];
-          this.boardSpellDamage = 0;
-        }
-        generateTestingMinions(minionNum) {
-          for(let i = 0; i < minionNum; i++) {
-            let randomHealth = Math.floor(Math.random() * 10 + 1),
-                randomDivineShield = Math.floor(Math.random() * 2),
-                randomSpellDamage = Math.floor(Math.random() * 2);
-            this.minions.push(new Minion(randomHealth, randomDivineShield, randomSpellDamage, 0));
-          }
-        }
-        printMinions() {
-          console.log(`${this.name}'s minions:`);
-          if(this.minions.length == 0) {
-            console.log('<empty>');
-          } else {
-            for(let i = 0; i < this.minions.length; i++)
-              console.log(`(${i}) ${this.minions[i].toPrintableString()}`);
-          }
-        }
-        updateBoardSpellDamage() {
-          this.boardSpellDamage = 0;
-          for(let i = 0; i < this.minions.length; i++)
-            this.boardSpellDamage += this.minions[i].spellDamage;
-        }
-        dealDamagesToMinions(damage) {
-          for(let i = 0; i < this.minions.length; i++) {
-            let minion = this.minions[i];
-            if(minion.hasDivineShield()) {
-              minion.divineShield = 0;
-            } else {
-              this.minions[i].health -= damage;
-            }
-          }
-        }
-        updateMinionsState() {
-          if(this.minions.length == 0) return 0;
-
-          let numOfMinionsDied = 0;
-          for(let i = 0; i < this.minions.length; i++) {
-            if(this.minions[i].health <= 0) {
-              numOfMinionsDied += 1;
-              this.minions.splice(i, 1);
-              i--;
-            }
-          }
-          return numOfMinionsDied;
-        }
-      }
-
-      let Snapshot = new class {
-        constructor() {
-          this.data = [];
-        }
-        make(_turn, _playerMinions, _opponentMinions, _boardSpellDamage) {
-          this.data.push({
-            turn: _turn,
-            minions: {
-              // Making deep copy
-              player: JSON.parse(JSON.stringify(_playerMinions)),
-              opponent: JSON.parse(JSON.stringify(_opponentMinions))
-            },
-            boardSpellDamage: _boardSpellDamage
-          });
-        }
-      };
-
-      /* ==================================================================== */
-
-      let playerBattlefield = new Battlefield('Player'),
-          opponentBattlefield = new Battlefield('Opponent');
-
-      playerBattlefield.generateTestingMinions(minionNum.player);
-      playerBattlefield.printMinions();
-
-      opponentBattlefield.generateTestingMinions(minionNum.opponent);
-      opponentBattlefield.printMinions();
-
-      playerBattlefield.updateBoardSpellDamage();
-      Snapshot.make(0,
-        playerBattlefield.minions,
-        opponentBattlefield.minions,
-        playerBattlefield.boardSpellDamage
-      );
-
-      /* ==================================================================== */
-
-      let keepCasting = false,
-          timesOfCasting = 0;
-      do {
-         keepCasting = castDefileOnce();
-      } while(keepCasting);
-
-      function castDefileOnce() {
-        let numOfMinionsDied = 0;
-
-        timesOfCasting++;
-        playerBattlefield.updateBoardSpellDamage();
-        console.log(`\nCast defile (${timesOfCasting} times), boardSpellDamage: ${playerBattlefield.boardSpellDamage}`);
-
-        playerBattlefield.dealDamagesToMinions(1 + playerBattlefield.boardSpellDamage);
-        numOfMinionsDied += playerBattlefield.updateMinionsState();
-        playerBattlefield.printMinions();
-
-        opponentBattlefield.dealDamagesToMinions(1 + opponentBattlefield.boardSpellDamage);
-        numOfMinionsDied += opponentBattlefield.updateMinionsState();
-        opponentBattlefield.printMinions();
-
-        console.log(`num of minions died this turn: ${numOfMinionsDied}`)
-
-        Snapshot.make(timesOfCasting,
-          playerBattlefield.minions,
-          opponentBattlefield.minions,
-          playerBattlefield.boardSpellDamage
-        );
-
-        return numOfMinionsDied;
-      };
-    </script>
+    <div class="canvas-wrapper"><canvas id="playerCanvas"></canvas></div>
+    <div class="canvas-wrapper"><canvas id="opponentCanvas"></canvas></div>
+    <div id="slidebar-wrapper">
+      Turn (<span id="turn-text">N/A</span>), Spell Damage (last turn): <span id="spell-damage-text">N/A</span><br>
+      <input type="range" id="slidebar" value="0" disabled>
+    </div>
+    <div id="btn-wrapper">
+      <button id="btn-cast-defile">Cast Defile - Click Me First</button>
+      <button id="btn-generate" disabled>Generate</button>
+    </div>
+    <script src="js/script.js"></script>
   </body>
 </html>
