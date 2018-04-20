@@ -8,6 +8,7 @@ const templateCardSize = {
   height: 543
 };
 const zoomRatio = 0.4;
+const nickyZoomRatio = 0.4;
 
 
 class Minion {
@@ -92,6 +93,12 @@ class Battlefield {
       ctx.textAlign = 'center';
 
       ctx.drawImage(
+        nickyImage, x + 50 * zoomRatio, y + 35 * zoomRatio,
+        Math.floor(nickyImage.width * nickyZoomRatio * zoomRatio),
+        Math.floor(nickyImage.height * nickyZoomRatio * zoomRatio)
+      );
+
+      ctx.drawImage(
         templateCardImage, x, y,
         Math.floor(templateCardSize.width * zoomRatio),
         Math.floor(templateCardSize.height * zoomRatio)
@@ -155,6 +162,11 @@ class Battlefield {
 
     return numOfMinionsDied;
   }
+
+  clear() {
+    this.minions = [];
+    this.boardSpellDamage = 0;
+  }
 }
 
 let playerCanvas = document.getElementById('playerCanvas'),
@@ -162,12 +174,15 @@ let playerCanvas = document.getElementById('playerCanvas'),
     opponentCanvas = document.getElementById('opponentCanvas')
     opponentBattlefield = new Battlefield('Opponent', opponentCanvas),
     templateCardImage = new Image(),
+    nickyImage = new Image(),
     btnCastDefile = document.getElementById('btn-cast-defile'),
+    btnGenerate = document.getElementById('btn-generate'),
     slidebar = document.getElementById('slidebar'),
     turnText = document.getElementById('turn-text'),
     spellDamageText = document.getElementById('spell-damage-text');
 
-templateCardImage.src = "img/template.png";
+templateCardImage.src = 'img/template.png';
+nickyImage.src = 'img/nicky.jpg';
 
 let Snapshot = new class {
   constructor() {
@@ -217,6 +232,10 @@ let Snapshot = new class {
     snapshot.battlefields.player.renderMinions();
     snapshot.battlefields.opponent.renderMinions();
   }
+
+  clear() {
+    this.data = [];
+  }
 }
 
 
@@ -263,17 +282,33 @@ function castDefile() {
 /* ========================================================================== */
 
 window.onload = () => {
-  playerBattlefield.generateTestingMinions(testingMinionNum.player);
-  playerBattlefield.printMinions();
+  function init() {
+    playerBattlefield.clear();
+    playerBattlefield.generateTestingMinions(testingMinionNum.player);
+    playerBattlefield.printMinions();
 
-  opponentBattlefield.generateTestingMinions(testingMinionNum.opponent);
-  opponentBattlefield.printMinions();
+    opponentBattlefield.clear();
+    opponentBattlefield.generateTestingMinions(testingMinionNum.opponent);
+    opponentBattlefield.printMinions();
 
-  playerBattlefield.updateBoardSpellDamage();
-  spellDamageText.textContent = playerBattlefield.boardSpellDamage;
-  Snapshot.takeSnapshot(0);
+    playerBattlefield.updateBoardSpellDamage();
+    spellDamageText.textContent = playerBattlefield.boardSpellDamage;
 
-  btnCastDefile.onclick = castDefile;
+    Snapshot.clear();
+    Snapshot.takeSnapshot(0);
+  }
+  init();
+
+  btnCastDefile.onclick = () => {
+    castDefile();
+    btnCastDefile.disabled = true;
+    btnGenerate.disabled = false;
+  };
+  btnGenerate.onclick = () => {
+    init();
+    btnCastDefile.disabled = false;
+    btnGenerate.disabled = true;
+  };
   slidebar.oninput = () => {
     Snapshot.render(slidebar.value);
   };
